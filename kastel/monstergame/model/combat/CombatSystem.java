@@ -36,14 +36,16 @@ public class CombatSystem {
      * @param monsters List of monsters that will participate in combat
      * @param commandInterface Interface for handling commands
      * @param debugMode Whether to run in debug mode with extra output
+     * @param randomUtil The random utility to use
      */
-    public CombatSystem(List<Monster> monsters, CommandInterface commandInterface, boolean debugMode) {
+    public CombatSystem(List<Monster> monsters, CommandInterface commandInterface,
+                        boolean debugMode, RandomUtil randomUtil) {
         this.monsters = new ArrayList<>(monsters);
         this.commandInterface = commandInterface;
         this.inDebugMode = debugMode;
-        this.randomUtil = new RandomUtil(0, debugMode); // Default seed 0
+        this.randomUtil = randomUtil;
 
-        // Initialize helper classes
+        // Initialize helper classes with the provided randomUtil
         this.statusHandler = new StatusConditionHandler(randomUtil, inDebugMode);
         this.actionExecutor = new ActionExecutor(randomUtil, inDebugMode, statusHandler);
 
@@ -55,17 +57,6 @@ public class CombatSystem {
         // Initialize phase tracking
         currentMonsterIndex = 0;
         allActionsSelected = false;
-    }
-
-    /**
-     * Sets the random seed for the combat system.
-     *
-     * @param seed The seed to use for random number generation
-     */
-    public void setRandomSeed(long seed) {
-        this.randomUtil = new RandomUtil(seed, inDebugMode);
-        this.statusHandler.setRandomUtil(randomUtil);
-        this.actionExecutor.setRandomUtil(randomUtil);
     }
 
     /**
@@ -146,6 +137,10 @@ public class CombatSystem {
                 // Process status conditions before action
                 boolean skipAction = processStatusConditions(attacker);
                 if (skipAction) {
+                    // Apply burn damage even if action is skipped
+                    if (attacker.getStatusCondition() == StatusCondition.BURN) {
+                        statusHandler.applyBurnDamage(attacker);
+                    }
                     continue;
                 }
                 // Handle passing
@@ -158,8 +153,10 @@ public class CombatSystem {
             }
         }
     }
+
     /**
      * Process a monsters status conditions at the start of its turn.
+     *
      * @param monster The monster to process status conditions for
      * @return true if the monster should skip its action, false otherwise
      */
@@ -174,7 +171,7 @@ public class CombatSystem {
         boolean conditionEnds = randomUtil.rollChance(33.33, "status condition end for " + monster.getName());
         if (conditionEnds) {
             handleStatusConditionEnding(monster, currentCondition);
-            return false; // Don't skip action if condition ended
+            return false;
         }
 
         // Skip action if still sleeping
@@ -195,12 +192,14 @@ public class CombatSystem {
             System.out.println(monster.getName() + " is sleeping and cannot move!");
         }
     }
+
     /**
      * Handle a status condition ending.
      */
     private void handleStatusConditionEnding(Monster monster, StatusCondition condition) {
         monster.setStatusCondition(null);
     }
+
     /**
      * Handle a monster passing its turn.
      */
@@ -210,24 +209,21 @@ public class CombatSystem {
             statusHandler.applyBurnDamage(monster);
         }
     }
+
     /**
      * Execute a monsters action.
      */
     private void executeMonsterAction(Monster attacker, Action action) {
         System.out.println(attacker.getName() + " uses " + action.getName() + "!");
-        boolean actionFailed = false;
-        // Check if burn prevents damage actions
-        if (attacker.getStatusCondition() == StatusCondition.BURN && actionHasDamage(action)) {
-            actionFailed = true;
-        } else {
-            // Only executes the action if not burn
-            actionFailed = !actionExecutor.executeAction(attacker, action, monsters);
-        }
+
+        // Execute the action regardless of burn status
+        boolean actionFailed = !actionExecutor.executeAction(attacker, action, monsters);
         // Report action failure
         if (actionFailed) {
             System.out.println("The action failed...");
         }
         // Apply burn damage after action if monster is burning
+        // This happens whether the action succeeded or failed
         if (attacker.getStatusCondition() == StatusCondition.BURN) {
             statusHandler.applyBurnDamage(attacker);
         }
@@ -238,6 +234,7 @@ public class CombatSystem {
 
     /**
      * Helper method to check if action has damage effects
+     *
      * @param action selected action
      * @return true if the selected action does damage, false otherwise
      */

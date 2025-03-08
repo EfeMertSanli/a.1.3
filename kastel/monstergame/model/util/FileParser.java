@@ -26,6 +26,87 @@ public final class FileParser {
     }
 
     /**
+     * Parse command line arguments to extract configuration path, debug mode, and seed.
+     *
+     * @param args Command line arguments
+     * @return A CommandArgs object containing the parsed arguments
+     */
+    public static CommandArgs parseCommandArgs(String[] args) {
+        if (args.length < 1) {
+            System.out.println("Usage: java -jar MonsterCompetition.jar <config_file_path> [seed|debug]");
+            return null;
+        }
+
+        String configFilePath = args[0];
+        boolean debugMode = false;
+        long seed = -1; // Default to no specific seed
+
+        if (args.length >= 2) {
+            if (args[1].equalsIgnoreCase("debug")) {
+                debugMode = true;
+                System.out.println("Debug mode enabled");
+            } else {
+                try {
+                    seed = Long.parseLong(args[1]);
+                } catch (NumberFormatException e) {
+                    System.out.println("Warning: Invalid seed, using random seed");
+                }
+            }
+        }
+
+        return new CommandArgs(configFilePath, debugMode, seed);
+    }
+
+    /**
+     * Container class for command line arguments.
+     */
+    public static class CommandArgs {
+        private final String configFilePath;
+        private final boolean debugMode;
+        private final long seed;
+
+        /**
+         * Creates a new CommandArgs object.
+         *
+         * @param configFilePath Path to the configuration file
+         * @param debugMode Whether to run in debug mode
+         * @param seed The random seed to use (-1 for no specific seed)
+         */
+        public CommandArgs(String configFilePath, boolean debugMode, long seed) {
+            this.configFilePath = configFilePath;
+            this.debugMode = debugMode;
+            this.seed = seed;
+        }
+
+        /**
+         * Gets the path to the configuration file.
+         *
+         * @return The configuration file path
+         */
+        public String getConfigFilePath() {
+            return configFilePath;
+        }
+
+        /**
+         * Checks if debug mode is enabled.
+         *
+         * @return true if debug mode is enabled, false otherwise
+         */
+        public boolean isDebugMode() {
+            return debugMode;
+        }
+
+        /**
+         * Gets the random seed.
+         *
+         * @return The random seed (-1 if no specific seed)
+         */
+        public long getSeed() {
+            return seed;
+        }
+    }
+
+    /**
      * Container class for game data loaded from a configuration file.
      * Stores lists of monsters and actions.
      */

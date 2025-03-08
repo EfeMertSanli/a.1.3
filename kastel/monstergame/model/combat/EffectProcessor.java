@@ -13,11 +13,6 @@ import edu.kit.kastel.monstergame.model.enums.StatType;
 import edu.kit.kastel.monstergame.model.enums.StatusCondition;
 import edu.kit.kastel.monstergame.model.util.RandomUtil;
 
-import static edu.kit.kastel.monstergame.model.enums.DamageType.BASE;
-import static edu.kit.kastel.monstergame.model.enums.DamageType.RELATIVE;
-import static edu.kit.kastel.monstergame.model.enums.DamageType.ABSOLUTE;
-
-
 
 
 /**
@@ -97,9 +92,13 @@ public class EffectProcessor {
     private void applyDamageEffect(Monster attacker, Monster target, DamageEffect effect, boolean isFirstDamage) {
         int damage = 0;
         boolean isProtected = false;
+        boolean isBurnDamage = false;
 
-        // Check if the target has protection against damage
-        if (target.getProtection().get(ProtectionTarget.HEALTH) > 0 && attacker != target) {
+        // Check if this is burn damage
+        isBurnDamage = attacker == target && target.getStatusCondition() == StatusCondition.BURN;
+
+        // Check if the target has protection against damage (but not for burn damage)
+        if (target.getProtection().get(ProtectionTarget.HEALTH) > 0 && attacker != target && !isBurnDamage) {
             isProtected = true;
         }
 
@@ -130,7 +129,7 @@ public class EffectProcessor {
         int newHp = target.getCurrentHp() - damage;
         target.setCurrentHp(newHp);
 
-        System.out.println(target.getName() + " takes " + damage + " damage!");
+        System.out.println(target.getName() + " takes " + damage + " damage!" + (isBurnDamage ? " from burning!" : ""));
         if (target.isDefeated()) {
             System.out.println(target.getName() + " faints!");
         }
@@ -146,29 +145,32 @@ public class EffectProcessor {
     private void applyStatusConditionEffect(Monster attacker, Monster target, StatusConditionEffect effect) {
         StatusCondition newCondition = effect.getCondition();
 
+        // FIX: Make sure we're applying the status to the correct monster based on the effect target
+        // Only apply to the target - don't apply to the attacker unless it's a SELF-targeted effect
+        Monster affectedMonster = target;
+
         // If monster already has a condition, it can't get another
-        if (target.getStatusCondition() != null) {
-            System.out.println(target.getName() + " is already affected by "
-                    +
-                    target.getStatusCondition() + "!");
+        if (affectedMonster.getStatusCondition() != null) {
+            System.out.println(affectedMonster.getName() + " is already affected by "
+                    + affectedMonster.getStatusCondition() + "!");
             return;
         }
 
-        target.setStatusCondition(newCondition);
+        affectedMonster.setStatusCondition(newCondition);
 
         // Apply immediate effects of the condition
         switch (newCondition) {
             case BURN:
-                System.out.println(target.getName() + " caught on fire!");
+                System.out.println(affectedMonster.getName() + " caught on fire!");
                 break;
             case WET:
-                System.out.println(target.getName() + " got soaked!");
+                System.out.println(affectedMonster.getName() + " got soaked!");
                 break;
             case QUICKSAND:
-                System.out.println(target.getName() + " is stuck in quicksand!");
+                System.out.println(affectedMonster.getName() + " is stuck in quicksand!");
                 break;
             case SLEEP:
-                System.out.println(target.getName() + " fell asleep!");
+                System.out.println(affectedMonster.getName() + " fell asleep!");
                 break;
             default: break;
         }
@@ -222,8 +224,7 @@ public class EffectProcessor {
         } else {
             // No change (already at max/min)
             System.out.println(target.getName() + "'s " + statType + " cannot go "
-                    +
-                    (stageChange > 0 ? "higher" : "lower") + "!");
+                    + (stageChange > 0 ? "higher" : "lower") + "!");
         }
     }
 

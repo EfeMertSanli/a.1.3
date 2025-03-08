@@ -3,6 +3,7 @@ package edu.kit.kastel.monstergame.model.command;
 import edu.kit.kastel.monstergame.model.combat.CombatSystem;
 import edu.kit.kastel.monstergame.model.Monster;
 import edu.kit.kastel.monstergame.model.util.FileParser;
+import edu.kit.kastel.monstergame.model.util.RandomUtil;
 import edu.kit.kastel.monstergame.model.command.handlers.ActionHandler;
 import edu.kit.kastel.monstergame.model.command.handlers.CompetitionHandler;
 import edu.kit.kastel.monstergame.model.command.handlers.ConfigurationHandler;
@@ -25,6 +26,7 @@ public class CommandHandler {
     private boolean inDebugMode;
     private boolean inCompetition;
     private Monster currentMonster;
+    private RandomUtil randomUtil;
 
     private CompetitionHandler competitionHandler;
     private MonsterDisplayHandler displayHandler;
@@ -35,20 +37,21 @@ public class CommandHandler {
      * Creates a new CommandHandler.
      * @param initialGameData The initial game data
      * @param debugMode Whether to run in debug mode
+     * @param randomUtil The random utility to use
      */
-    public CommandHandler(FileParser.GameData initialGameData, boolean debugMode) {
+    public CommandHandler(FileParser.GameData initialGameData, boolean debugMode, RandomUtil randomUtil) {
         this.gameData = initialGameData;
         this.reader = new BufferedReader(new InputStreamReader(System.in));
         this.isRunning = true;
         this.inCompetition = false;
         this.inDebugMode = debugMode;
+        this.randomUtil = randomUtil;
 
         this.competitionHandler = new CompetitionHandler(this);
         this.displayHandler = new MonsterDisplayHandler(this);
         this.configHandler = new ConfigurationHandler(this);
         this.actionHandler = new ActionHandler(this);
     }
-
     /**
      * Starts the main command loop.
      */
@@ -181,6 +184,14 @@ public class CommandHandler {
      */
     public void setGameData(FileParser.GameData gameData) {
         this.gameData = gameData;
+    }
+
+    /**
+     * Gets the random utility.
+     * @return The random utility
+     */
+    public RandomUtil getRandomUtil() {
+        return randomUtil;
     }
 
     /**

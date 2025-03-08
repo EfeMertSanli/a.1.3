@@ -65,10 +65,6 @@ public class ActionExecutor {
         currentActionHasDamage = actionHasDamageEffect(action);
         firstDamageCalculation = currentActionHasDamage;
 
-        if (currentActionHasDamage && attacker.getStatusCondition() == StatusCondition.BURN) {
-            return false;
-        }
-
         Queue<Effect> effectQueue = new LinkedList<>();
 
         // Process the actions effects and add to queue
@@ -186,10 +182,11 @@ public class ActionExecutor {
      * @return The target monster or null if no target can be found
      */
     private Monster determineTarget(Monster attacker, Effect effect, List<Monster> monsters) {
+        // fixed
         if (effect.getTarget() == EffectTarget.SELF) {
-            return attacker;
+            return attacker; // Effect targets the user
         } else {
-            // Note to self: For now works with 1 monster, need to expand
+            // Effect targets an opponent
             for (Monster monster : monsters) {
                 if (monster != attacker && !monster.isDefeated()) {
                     return monster;
@@ -239,6 +236,6 @@ public class ActionExecutor {
         }
 
         // Use RandomUtil to determine if attack hits
-        return randomUtil.rollChance(hitChance, "hit calculation for " + effect.getEffectType());
+        return randomUtil.rollChance(hitChance * 100, "hit calculation for " + effect.getEffectType());
     }
 }

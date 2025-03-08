@@ -58,11 +58,12 @@ public class CompetitionHandler {
             }
         }
 
-        // Initialize combat system with the selected monsters
+        // Initialize combat system with the selected monsters and the RandomUtil instance
         CombatSystem combatSystem = new CombatSystem(
                 competitionMonsters,
                 new ConsoleCommandInterface(commandHandler),
-                commandHandler.isInDebugMode());
+                commandHandler.isInDebugMode(),
+                commandHandler.getRandomUtil());
 
         commandHandler.setCombatSystem(combatSystem);
 

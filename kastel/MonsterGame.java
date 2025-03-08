@@ -1,6 +1,7 @@
 package edu.kit.kastel;
 import edu.kit.kastel.monstergame.model.command.CommandHandler;
 import edu.kit.kastel.monstergame.model.util.FileParser;
+import edu.kit.kastel.monstergame.model.util.RandomUtil;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -23,17 +24,22 @@ public final class MonsterGame {
     public static void main(String[] args) {
         if (args.length < 1) {
             System.out.println("Usage: java -jar MonsterCompetition.jar <config_file_path> [seed|debug]");
+            return;
         }
 
         String configFilePath = args[0];
-
-        // Handle optional seed parameter or debug flag
         boolean debugMode = false;
+        long seed = 0; // Default seed
 
         if (args.length >= 2) {
             if (args[1].equalsIgnoreCase("debug")) {
                 debugMode = true;
-                System.out.println("Debug mode enabled");
+            } else {
+                try {
+                    seed = Long.parseLong(args[1]);
+                } catch (NumberFormatException e) {
+                    System.out.println("Error: Invalid seed value. Using default seed.");
+                }
             }
         }
 
@@ -45,20 +51,26 @@ public final class MonsterGame {
             }
         } catch (IOException e) {
             System.out.println("Error reading config file: " + e.getMessage());
+            return;
         }
+
+        // Create a single RandomUtil instance with the provided seed
+        RandomUtil randomUtil = new RandomUtil(seed, debugMode);
 
         // Parse the config file from the path
         FileParser.GameData gameData = FileParser.parseFile(configFilePath);
 
         if (gameData.getMonsters().isEmpty() || gameData.getActions().isEmpty()) {
             System.out.println("Error: Invalid or empty configuration file.");
+            return;
         }
 
         System.out.println();
         System.out.println("Loaded " + gameData.getActions().size() + " actions, "
                 + gameData.getMonsters().size() + " monsters.");
-        // Initialize command handler
-        CommandHandler commandHandler = new CommandHandler(gameData, debugMode);
+
+        // Initialize command handler with the randomUtil instance
+        CommandHandler commandHandler = new CommandHandler(gameData, debugMode, randomUtil);
         commandHandler.start();
     }
 }
